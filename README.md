@@ -46,8 +46,8 @@ This submodule is **standalone** but also integrates seamlessly into the [mdivic
 	pip install -e .
 	```
 
-3.	(Optional) Integration with mdivicomtools
-•	If you use this repository within mdivicomtools, you can simply add this repository as a Git submodule or install it via pip install -e ./mdipplcloud within the umbrella environment.
+3. (Optional) Integration with mdivicomtools
+- If you use this repository within mdivicomtools, you can simply add this repository as a Git submodule or install it via pip install -e ./mdipplcloud within the umbrella environment.
 
 ⸻
 
@@ -64,8 +64,6 @@ api_key, base_url, download_directory = load_config()
 
 # Or provide a custom path:
 api_key, base_url, download_directory = load_config("path/to/config.ini")
-
-
 
 ⸻
 
@@ -109,9 +107,9 @@ For more usage examples, see example_script.py.
 ⸻
 
 ## Caution
-	•	Not extensively tested for all use cases. Use at your own risk.
-	•	Empty download directories recommended to avoid accidental file overwrites.
-	•	Always manage your API keys and config files securely.
+- Not extensively tested for all use cases. Use at your own risk.
+- Empty download directories recommended to avoid accidental file overwrites.
+- Always manage your API keys and config files securely.
 
 ⸻
 
@@ -125,9 +123,9 @@ This work is licensed under the MIT License. Copyright (c) 2025 Martin Schulte-R
 ⸻
 
 ## Contributing
-	1.	Fork this repository and clone it locally.
-	2.	Create a feature branch, e.g. git checkout -b feature/new-download-mode.
-	3.	Make changes and test them locally.
-	4.	Submit a Pull Request to the main branch of mdipplcloud.
+1. Fork this repository and clone it locally.
+2. Create a feature branch, e.g. git checkout -b feature/new-download-mode.
+3. Make changes and test them locally.
+4. Submit a Pull Request to the main branch of mdipplcloud.
 
 ⸻
