@@ -1,7 +1,7 @@
 # mdipplcloud: Pupil Labs Cloud API Wrapper
 
 **A Python wrapper for the Pupil Labs Cloud API** – enabling efficient interaction and data management.  
-This submodule is **standalone** but also integrates seamlessly into the [mdivicomtools](https://github.com/yourname/mdivicomtools) umbrella repository.
+This submodule is **standalone** but also integrates seamlessly into the [mdivicomtools](https://github.com/msrresearch/mdivicomtools) umbrella repository.
 
 ---
 
