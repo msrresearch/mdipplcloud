@@ -69,7 +69,7 @@ api_key, base_url, download_directory = load_config("path/to/config.ini")
 
 ## Example Usage
 
-```python
+```
 #Setup
 from mdipplcloud.downloader import load_config, setup_logging, download_recording
 
