@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mdipplcloud"
+version = "0.2"
+description = "Pupil Labs Cloud API Wrapper"
+authors = [
+    { name = "Martin Schulte-Rüther", email = "martin@schulte-ruether.de" }
+]
+license = { text = "MIT" }
+dependencies = [
+    "requests"
+]
+requires-python = ">=3.8"
+
+[project.urls]
+homepage = "https://github.com/msrresearch/mdipplcloud"
+repository = "https://github.com/msrresearch/mdipplcloud"
