@@ -106,6 +106,37 @@ For more usage examples, see example_script.py.
 
 ⸻
 
+## Contract Checks (API Compatibility)
+
+To verify whether the live Pupil Cloud API still matches what this package expects, run the opt-in pytest contract tests. These hit the real API and validate response shape and required fields, without downloading data.
+
+Enable the tests by setting `PPL_CLOUD_CONTRACT=1` and provide credentials via `config.ini` or env vars.
+
+Example (using a config file):
+```bash
+PPL_CLOUD_CONTRACT=1 \
+PPL_CLOUD_CONFIG=/path/to/config.ini \
+pytest mdipplcloud/tests/test_contract_api.py
+```
+
+Example (using env vars):
+```bash
+PPL_CLOUD_CONTRACT=1 \
+PPL_CLOUD_API_KEY=your_api_key \
+PPL_CLOUD_WORKSPACE_ID=your_workspace_id \
+PPL_CLOUD_BASE_URL=https://api.cloud.pupil-labs.com/v2 \
+pytest mdipplcloud/tests/test_contract_api.py
+```
+
+Optional environment variables:
+- `PPL_CLOUD_PROJECT_ID` to force a stable project for project-scoped checks.
+- `PPL_CLOUD_RECORDING_ID` to force a stable recording for file checks.
+- `PPL_CLOUD_TIMEOUT` to adjust HTTP timeout (seconds).
+
+These tests are intended to be run occasionally (for example before releases) to detect breaking API changes early.
+
+⸻
+
 ## Caution
 - Not extensively tested for all use cases. Use at your own risk.
 - Empty download directories recommended to avoid accidental file overwrites.
