@@ -57,49 +57,44 @@ This submodule is **standalone** but also integrates seamlessly into the [mdivic
 	3.	Keep config.ini private (especially your API key). If you keep it in your repo, add config.ini to .gitignore.
 	4.	Load the config in your Python script:
 
-from mdipplcloud.downloader import load_config
+```python
+import mdipplcloud as pplc
 
 # If config.ini is in the same directory as your script:
-api_key, base_url, download_directory = load_config()
+pplc.load_config()
 
 # Or provide a custom path:
-api_key, base_url, download_directory = load_config("path/to/config.ini")
+pplc.load_config("path/to/config.ini")
+```
 
 ⸻
 
 ## Example Usage
 
-```
-#Setup
-from mdipplcloud.downloader import load_config, setup_logging, download_recording
+```python
+# Setup
+import mdipplcloud as pplc
 
 # Load config
-api_key, base_url, download_directory = load_config()
+pplc.load_config()
 
-# Initialize logger
-logger = setup_logging(download_directory)
+# Initialize logger (logs to download directory)
+logger = pplc.setup_logging()
 
-#Download a Single Recording
-download_recording("recording_id_here", logger)
+# Download a Single Recording
+pplc.download_recording("recording_id_here", logger=logger)
 
-#Bulk Download from Multiple Projects
-from mdipplcloud.downloader import bulk_download_projects
+# Bulk Download from Multiple Projects
 project_ids = ['project1_id', 'project2_id']
-bulk_download_projects(
-    logger, 
-    project_ids=project_ids, 
-    output_directory=download_directory
-)
+pplc.bulk_download_projects(project_ids=project_ids)
 
-#Fetch Project/Workspace Info
-from mdipplcloud.downloader import get_workspace_info
-workspace_info = get_workspace_info("your_workspace_id")
+# Fetch Project/Workspace Info
+workspace_info = pplc.get_workspace_info()
 print("Workspace info:", workspace_info)
 
-#Download Specific Files
-from mdipplcloud.downloader import get_file_list, download_files_from_cloud
-file_list = get_file_list("specific_recording_id")
-download_files_from_cloud(file_list, logger, "your_download_directory")
+# Download Specific Files
+file_list = pplc.get_file_list("specific_recording_id", return_dict=True)
+pplc.download_files(file_list, logger=logger)
 ```
 
 For more usage examples, see example_script.py.
