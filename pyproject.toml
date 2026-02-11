@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "mdipplcloud"
 version = "0.2"
 description = "Pupil Labs Cloud API Wrapper"
+readme = "README.md"
 authors = [
     { name = "Martin Schulte-Rüther", email = "martin@schulte-ruether.de" }
 ]
@@ -18,3 +19,9 @@ requires-python = ">=3.8"
 [project.urls]
 homepage = "https://github.com/msrresearch/mdipplcloud"
 repository = "https://github.com/msrresearch/mdipplcloud"
+
+[project.entry-points."mdivicomtools.plugins"]
+mdipplcloud = "mdipplcloud.plugin:get_plugin"
+
+[project.optional-dependencies]
+test = ["pytest"]

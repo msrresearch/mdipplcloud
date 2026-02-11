@@ -69,40 +69,72 @@ api_key, base_url, download_directory = load_config("path/to/config.ini")
 
 ## Example Usage
 
-```
-#Setup
-from mdipplcloud.downloader import load_config, setup_logging, download_recording
+```python
+import mdipplcloud as pplc
 
-# Load config
-api_key, base_url, download_directory = load_config()
+# Load config.ini from the current directory (or pass an explicit path)
+pplc.load_config()
 
-# Initialize logger
-logger = setup_logging(download_directory)
+# Configure logging (defaults to console + file in the download directory)
+logger = pplc.setup_logging()
 
-#Download a Single Recording
-download_recording("recording_id_here", logger)
+# Download one recording ZIP and unpack it
+pplc.download_recording("recording_id_here", unpack_zip=True, logger=logger)
 
-#Bulk Download from Multiple Projects
-from mdipplcloud.downloader import bulk_download_projects
-project_ids = ['project1_id', 'project2_id']
-bulk_download_projects(
-    logger, 
-    project_ids=project_ids, 
-    output_directory=download_directory
+# List recordings from the workspace (dict form for downstream processing)
+recordings = pplc.get_resource_list(
+    "recording",
+    source="workspace",
+    return_dict=True,
 )
 
-#Fetch Project/Workspace Info
-from mdipplcloud.downloader import get_workspace_info
-workspace_info = get_workspace_info("your_workspace_id")
-print("Workspace info:", workspace_info)
+# List files for a recording and download them
+file_list = pplc.get_file_list("recording_id_here", return_dict=True)
+pplc.download_files(file_list, logger=logger)
 
-#Download Specific Files
-from mdipplcloud.downloader import get_file_list, download_files_from_cloud
-file_list = get_file_list("specific_recording_id")
-download_files_from_cloud(file_list, logger, "your_download_directory")
+# Bulk download recordings from workspace IDs
+pplc.bulk_download_recordings(recording_ids=["recording_id_here"], logger=logger)
+
+# Bulk download project recordings/enrichments
+pplc.bulk_download_projects(
+    project_ids=["project_id_here"],
+    exclude_enrichment_files=[],
+    exclude_recording_files=[],
+    logger=logger,
+)
 ```
 
-For more usage examples, see example_script.py.
+Canonical runnable reference: `mdipplcloud/example_script.py`.
+
+⸻
+
+## mdivicom Plugin Usage (v0.1)
+
+`mdipplcloud` is also registered as an `mdivicomtools` plugin via the `mdivicomtools.plugins` entry-point group.
+
+### Discover and inspect
+
+```bash
+mdivicom plugins list
+mdivicom plugins info mdipplcloud
+```
+
+### Run through mdivicom
+
+```bash
+mdivicom run mdipplcloud \
+  --dataset /path/to/input_dataset \
+  --out /path/to/run_output \
+  --config '{"recording_ids":["recording_id_here"],"cloud":{"api_key":"***","workspace_id":"***","base_url":"https://api.cloud.pupil-labs.com"}}'
+```
+
+Contract notes:
+- Registration uses v0.1 JSON-safe shape: `{"meta": {...}, "entry": {"callable": "mdipplcloud.plugin:run"}}`.
+- Python execution entrypoint is `run(dataset_dir, out_dir, config, *, work_dir=None, dry_run=False)`.
+- Plugin outputs are plugin-scoped under `out_dir/`:
+  - `out_dir/dataset/**`
+  - `out_dir/provenance.json`
+  - `out_dir/resultbundle.json`
 
 ⸻
 
