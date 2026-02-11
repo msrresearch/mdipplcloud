@@ -13,6 +13,10 @@ pass() {
   echo "[OK]   $1"
 }
 
+warn() {
+  echo "[WARN] $1"
+}
+
 if [[ ! -f CHANGELOG.md ]]; then
   fail "CHANGELOG.md missing"
 fi
@@ -43,7 +47,7 @@ if [[ -f AGENTS.md ]]; then
     fail "AGENTS.md exists but has no MDI policy block"
   fi
 else
-  fail "AGENTS.md missing"
+  warn "AGENTS.md missing (expected on local/dev; release branches may omit planning files)"
 fi
 
 echo "Release checks passed."
