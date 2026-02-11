@@ -18,3 +18,4 @@ The format is based on Keep a Changelog.
 
 ### Fixed
 - Updated task workflow tracking (`planning/tasks.*`) to reflect completed README alignment and active contract-alignment work.
+- Constrained setuptools package discovery to `mdipplcloud*` and normalized versioning to `0.2.0` so editable installs work in cross-repo smoke tests.

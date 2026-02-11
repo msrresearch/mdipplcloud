@@ -1,16 +1,16 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "mdipplcloud"
-version = "0.2"
+version = "0.2.0"
 description = "Pupil Labs Cloud API Wrapper"
 readme = "README.md"
 authors = [
-    { name = "Martin Schulte-Rüther", email = "martin@schulte-ruether.de" }
+    { name = "Martin Schulte-Ruether", email = "martin@schulte-ruether.de" }
 ]
-license = { text = "MIT" }
+license = "MIT"
 dependencies = [
     "requests"
 ]
@@ -25,3 +25,7 @@ mdipplcloud = "mdipplcloud.plugin:get_plugin"
 
 [project.optional-dependencies]
 test = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["mdipplcloud*"]
+exclude = ["planning*", "docs*", "scripts*"]
