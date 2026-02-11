@@ -72,32 +72,102 @@ pplc.load_config("path/to/config.ini")
 ## Example Usage
 
 ```python
-# Setup
 import mdipplcloud as pplc
 
-# Load config
+# Load config.ini from the current directory (or pass an explicit path)
 pplc.load_config()
 
-# Initialize logger (logs to download directory)
+# Configure logging (defaults to console + file in the download directory)
 logger = pplc.setup_logging()
 
-# Download a Single Recording
-pplc.download_recording("recording_id_here", logger=logger)
+# Download one recording ZIP and unpack it
+pplc.download_recording("recording_id_here", unpack_zip=True, logger=logger)
 
-# Bulk Download from Multiple Projects
-project_ids = ['project1_id', 'project2_id']
-pplc.bulk_download_projects(project_ids=project_ids)
+# List recordings from the workspace (dict form for downstream processing)
+recordings = pplc.get_resource_list(
+    "recording",
+    source="workspace",
+    return_dict=True,
+)
 
-# Fetch Project/Workspace Info
-workspace_info = pplc.get_workspace_info()
-print("Workspace info:", workspace_info)
-
-# Download Specific Files
-file_list = pplc.get_file_list("specific_recording_id", return_dict=True)
+# List files for a recording and download them
+file_list = pplc.get_file_list("recording_id_here", return_dict=True)
 pplc.download_files(file_list, logger=logger)
+
+# Bulk download recordings from workspace IDs
+pplc.bulk_download_recordings(recording_ids=["recording_id_here"], logger=logger)
+
+# Bulk download project recordings/enrichments
+pplc.bulk_download_projects(
+    project_ids=["project_id_here"],
+    exclude_enrichment_files=[],
+    exclude_recording_files=[],
+    logger=logger,
+)
 ```
 
-For more usage examples, see example_script.py.
+Canonical runnable reference: `mdipplcloud/example_script.py`.
+
+⸻
+
+## mdivicom Plugin Usage (v0.1)
+
+`mdipplcloud` is also registered as an `mdivicomtools` plugin via the `mdivicomtools.plugins` entry-point group.
+
+### Discover and inspect
+
+```bash
+mdivicom plugins list
+mdivicom plugins info mdipplcloud
+```
+
+### Run through mdivicom
+
+```bash
+mdivicom run mdipplcloud \
+  --dataset /path/to/input_dataset \
+  --out /path/to/run_output \
+  --config '{"recording_ids":["recording_id_here"],"cloud":{"api_key":"***","workspace_id":"***","base_url":"https://api.cloud.pupil-labs.com"}}'
+```
+
+Contract notes:
+- Registration uses v0.1 JSON-safe shape: `{"meta": {...}, "entry": {"callable": "mdipplcloud.plugin:run"}}`.
+- Python execution entrypoint is `run(dataset_dir, out_dir, config, *, work_dir=None, dry_run=False)`.
+- Plugin outputs are plugin-scoped under `out_dir/`:
+  - `out_dir/dataset/**`
+  - `out_dir/provenance.json`
+  - `out_dir/resultbundle.json`
+
+⸻
+
+## Contract Checks (API Compatibility)
+
+To verify whether the live Pupil Cloud API still matches what this package expects, run the opt-in pytest contract tests. These hit the real API and validate response shape and required fields, without downloading data.
+
+Enable the tests by setting `PPL_CLOUD_CONTRACT=1` and provide credentials via `config.ini` or env vars.
+
+Example (using a config file):
+```bash
+PPL_CLOUD_CONTRACT=1 \
+PPL_CLOUD_CONFIG=/path/to/config.ini \
+pytest mdipplcloud/tests/test_contract_api.py
+```
+
+Example (using env vars):
+```bash
+PPL_CLOUD_CONTRACT=1 \
+PPL_CLOUD_API_KEY=your_api_key \
+PPL_CLOUD_WORKSPACE_ID=your_workspace_id \
+PPL_CLOUD_BASE_URL=https://api.cloud.pupil-labs.com/v2 \
+pytest mdipplcloud/tests/test_contract_api.py
+```
+
+Optional environment variables:
+- `PPL_CLOUD_PROJECT_ID` to force a stable project for project-scoped checks.
+- `PPL_CLOUD_RECORDING_ID` to force a stable recording for file checks.
+- `PPL_CLOUD_TIMEOUT` to adjust HTTP timeout (seconds).
+
+These tests are intended to be run occasionally (for example before releases) to detect breaking API changes early.
 
 ⸻
 
