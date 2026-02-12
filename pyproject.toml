@@ -10,7 +10,7 @@ readme = "README.md"
 authors = [
     { name = "Martin Schulte-Ruether", email = "martin@schulte-ruether.de" }
 ]
-license = "MIT"
+license = { text = "MIT" }
 dependencies = [
     "requests"
 ]
