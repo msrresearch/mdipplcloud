@@ -1,16 +1,85 @@
 import fnmatch
 import json
+import os
 import re
+from datetime import datetime
+
 import requests
-from .helpers import *
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+from .helpers import (
+    Config,
+    cfg_get,
+    create_project_directory,
+    format_project_name,
+    get_logger,
+    pass_filters,
+    unpack_zip_file,
+)
 
 #recordings_url = f"{base_url}/workspaces/{workspace_id}/recordings"
 #projects_url = f"{base_url}/workspaces/{workspace_id}/projects"
 
 
 _resource_cache = {}
+_SESSION = None
+DEFAULT_TIMEOUT = 30
 
-def download_single_file_from_url(url, local_filename, logger=None):
+
+def _get_session():
+    global _SESSION
+    if _SESSION is None:
+        session = requests.Session()
+        retries = Retry(
+            total=3,
+            backoff_factor=0.5,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE"],
+            respect_retry_after_header=True,
+        )
+        adapter = HTTPAdapter(max_retries=retries)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        _SESSION = session
+    return _SESSION
+
+
+def _get_timeout(custom_cfg=None):
+    if custom_cfg is not None and getattr(custom_cfg, "timeout", None) is not None:
+        return custom_cfg.timeout
+    if getattr(Config, "timeout", None) is not None:
+        return Config.timeout
+    return DEFAULT_TIMEOUT
+
+
+def _request(method, url, **kwargs):
+    custom_cfg = kwargs.pop("custom_cfg", None)
+    if "timeout" not in kwargs:
+        kwargs["timeout"] = _get_timeout(custom_cfg)
+    return _get_session().request(method, url, **kwargs)
+
+
+def _cfg_get(key, custom_cfg=None):
+    if custom_cfg is None:
+        return cfg_get(key)
+    if key == 'headers':
+        return custom_cfg.get_headers()
+    elif key == 'api_key':
+        return custom_cfg.api_key
+    elif key == 'workspace_id':
+        return custom_cfg.workspace_id
+    elif key == 'base_url':
+        return custom_cfg.base_url
+    elif key == 'projects_url':
+        return custom_cfg.get_projects_url()
+    elif key == 'download_directory':
+        return custom_cfg.download_directory
+    else:
+        raise ValueError(f"Unknown config value: {key}")
+
+
+def download_single_file_from_url(url, local_filename, logger=None, custom_cfg=None):
     """
     Utility function to download a file from a URL.
 
@@ -28,7 +97,13 @@ def download_single_file_from_url(url, local_filename, logger=None):
     if logger is None:
         logger = get_logger()
     try:
-        with requests.get(url, stream=True, headers=cfg_get('headers')) as response:
+        with _request(
+            "GET",
+            url,
+            stream=True,
+            headers=_cfg_get('headers', custom_cfg),
+            custom_cfg=custom_cfg,
+        ) as response:
             response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
             with open(local_filename, 'wb') as file:
                 for chunk in response.iter_content(chunk_size=8192):
@@ -69,11 +144,11 @@ def download_recording(recording_id, output_directory=None, unpack_zip=True, log
     else:
         cfg = custom_cfg
     if output_directory is None:
-        output_directory = cfg_get('download_directory')
+        output_directory = _cfg_get('download_directory', cfg)
     if logger is None:
         logger = get_logger()
-    base_url = cfg_get('base_url')
-    workspace_id = cfg_get('workspace_id')
+    base_url = _cfg_get('base_url', cfg)
+    workspace_id = _cfg_get('workspace_id', cfg)
     success = False
     recording_download_url = f"{base_url}/workspaces/{workspace_id}/recordings/{recording_id}.zip"
     local_filename = os.path.join(output_directory, f"{recording_id}.zip")
@@ -85,7 +160,7 @@ def download_recording(recording_id, output_directory=None, unpack_zip=True, log
             os.makedirs(output_directory)
 
         logger.info(f"Downloading recording {recording_id} to {local_filename}...")
-        if download_single_file_from_url(recording_download_url, local_filename, logger):
+        if download_single_file_from_url(recording_download_url, local_filename, logger, custom_cfg=cfg):
             if unpack_zip:
                 logger.info(f"Unpacking recording {recording_id}...")
                 if not unpack_zip_file(local_filename, output_directory, logger):
@@ -121,7 +196,7 @@ def download_files(file_list, download_directory=None, logger=None, custom_cfg=N
     else:
         cfg = custom_cfg
     if download_directory is None:
-        download_directory = cfg_get('download_directory')
+        download_directory = _cfg_get('download_directory', cfg)
     if logger is None:
         logger = get_logger()
 
@@ -148,7 +223,7 @@ def download_files(file_list, download_directory=None, logger=None, custom_cfg=N
                 os.makedirs(file_download_directory)
             local_filename = os.path.join(file_download_directory, file['name'])
             logger.info(f"Downloading {file['name']} from {file_url}...")
-            if download_single_file_from_url(file_url, local_filename, logger):
+            if download_single_file_from_url(file_url, local_filename, logger, custom_cfg=cfg):
                 downloaded_files += 1
             else:
                 logger.error(f"Failed to download {file['name']} from {file_url}")
@@ -179,11 +254,11 @@ def get_workspace_info(workspace_id=None, custom_cfg=None):
     else:
         cfg = custom_cfg
     if workspace_id is None:
-        workspace_id = cfg_get('workspace_id')
-    base_url = cfg_get('base_url')
-    headers = cfg_get('headers')
+        workspace_id = _cfg_get('workspace_id', cfg)
+    base_url = _cfg_get('base_url', cfg)
+    headers = _cfg_get('headers', cfg)
     workspace_url = f"{base_url}/workspaces/{workspace_id}"
-    response = requests.get(workspace_url, headers=headers)
+    response = _request("GET", workspace_url, headers=headers, custom_cfg=cfg)
     if response.status_code != 200:
         raise Exception(f"Failed to retrieve workspace {workspace_id}: {response.text}")
 
@@ -211,7 +286,7 @@ def get_resource_list(resource_type, id=None, date_range=None, name_pattern=None
         cfg = Config.get_config()
     else:
         cfg = custom_cfg
-    workspace_id = cfg_get('workspace_id')
+    workspace_id = _cfg_get('workspace_id', cfg)
     if source == 'workspace':
         id = workspace_id
     if logger is None:
@@ -223,8 +298,8 @@ def get_resource_list(resource_type, id=None, date_range=None, name_pattern=None
         logger.info(f"Returning cached {resource_type} data for {source} with id {id}.")
         items = _resource_cache[cache_key]
     else:
-        base_url = cfg_get('base_url')
-        headers = cfg_get('headers')
+        base_url = _cfg_get('base_url', cfg)
+        headers = _cfg_get('headers', cfg)
         # Constructing the appropriate API endpoint URL
         if resource_type == 'project':
             url = f"{base_url}/workspaces/{workspace_id}/projects"
@@ -249,7 +324,7 @@ def get_resource_list(resource_type, id=None, date_range=None, name_pattern=None
             else:
                 logger.error(f"Recording id must be specified when listing files")
                 return None
-        response = requests.get(url, headers=headers)
+        response = _request("GET", url, headers=headers, custom_cfg=cfg)
         if response.status_code != 200:
             logger.error(f"Failed to retrieve {resource_type} info for {source} with id {id}: {response.text}")
             return None
@@ -263,17 +338,22 @@ def get_resource_list(resource_type, id=None, date_range=None, name_pattern=None
     filtered_items = [item for item in items if pass_filters(item, resource_type, date_range, name_pattern, regex_pattern)]
     if not filtered_items:
         logger.info(f"No {resource_type} matched the given criteria.")
-        return None
+        return {} if return_dict else []
     if return_dict:
-        try:
-            return {item['id']: item for item in filtered_items}
-        except KeyError:
-            return {item['recording_id']: item for item in filtered_items}
-    else:
-        try:
-            return [item['id'] for item in filtered_items]
-        except KeyError:
-            return [item['recording_id'] for item in filtered_items]
+        result = {}
+        for item in filtered_items:
+            item_id = item.get('id', item.get('recording_id'))
+            if item_id is None:
+                continue
+            result[item_id] = item
+        return result
+    result = []
+    for item in filtered_items:
+        item_id = item.get('id', item.get('recording_id'))
+        if item_id is None:
+            continue
+        result.append(item_id)
+    return result
 
 # Example usage (commented out):
 # project_list = get_resource_list('project', name_pattern="*dyad*", regex_pattern=False, return_dict=True)
@@ -420,10 +500,10 @@ def download_project_enrichments(project_id, download_directory=None, name_patte
     else:
         cfg = custom_cfg
     if download_directory is None:
-        download_directory = cfg_get('download_directory')
-    base_url = cfg_get('base_url')
-    workspace_id = cfg_get('workspace_id')
-    headers = cfg_get('headers')
+        download_directory = _cfg_get('download_directory', cfg)
+    base_url = _cfg_get('base_url', cfg)
+    workspace_id = _cfg_get('workspace_id', cfg)
+    headers = _cfg_get('headers', cfg)
     if logger is None:
         logger = get_logger()
     projects_url = base_url + '/workspaces/' + workspace_id + '/projects'
@@ -432,7 +512,7 @@ def download_project_enrichments(project_id, download_directory=None, name_patte
     success = False
     logger.info(f"Downloading enrichments for project {project_id}...")
     try:
-        response = requests.get(enrichments_url, headers=headers)
+        response = _request("GET", enrichments_url, headers=headers, custom_cfg=cfg)
         response.raise_for_status()
 
         enrichments = response.json()['result']
@@ -483,18 +563,16 @@ def download_enrichment(enrichments_url, enrichment, download_directory=None, lo
         cfg = Config.get_config()
     else:
         cfg = custom_cfg
-    workspace_id = cfg_get('workspace_id')
-    base_url = cfg_get('base_url')
-    headers = cfg_get('headers')
+    headers = _cfg_get('headers', cfg)
     if not download_directory:
-        download_directory = cfg_get('download_directory')
+        download_directory = _cfg_get('download_directory', cfg)
     if not logger:
         logger = get_logger()
     enrichment_export_url = f"{enrichments_url}/{enrichment['id']}/export"
     local_filename = os.path.join(download_directory, f"{enrichment['name']}.zip")
 
     try:
-        download_response = requests.get(enrichment_export_url, headers=headers, stream=True)
+        download_response = _request("GET", enrichment_export_url, headers=headers, stream=True, custom_cfg=cfg)
         download_response.raise_for_status()
 
         logger.info(f"Downloading enrichment: {enrichment['name']} id: {enrichment['id']} to {local_filename}...")
@@ -534,9 +612,9 @@ def bulk_download_project_enrichments(project_ids=None, output_directory=None, w
     else:
         cfg = custom_cfg
     if workspace_id is None:
-        workspace_id = cfg_get('workspace_id')
+        workspace_id = _cfg_get('workspace_id', cfg)
     if output_directory is None:
-        output_directory = cfg_get('download_directory')
+        output_directory = _cfg_get('download_directory', cfg)
     if logger is None:
         logger = get_logger()
     if project_ids is None:
@@ -596,9 +674,9 @@ def bulk_download_recordings(recording_ids=None, output_directory=None, unpack_z
         cfg = Config.get_config()
     else:
         cfg = custom_cfg
-    workspace_id = cfg_get('workspace_id')
+    workspace_id = _cfg_get('workspace_id', cfg)
     if output_directory is None:
-        output_directory = cfg_get('download_directory')
+        output_directory = _cfg_get('download_directory', cfg)
     if logger is None:
         logger = get_logger()
     logger.info("Starting bulk_download_recordings from workspace")
@@ -633,7 +711,7 @@ def bulk_download_recordings(recording_ids=None, output_directory=None, unpack_z
     else:
         logger.info("All recordings downloaded successfully")
 
-def bulk_download_projects(project_ids=None, exclude_enrichment_files=[], exclude_recording_files=[],
+def bulk_download_projects(project_ids=None, exclude_enrichment_files=None, exclude_recording_files=None,
                            output_directory=None, all_recordings=True, all_enrichments=True,
                            project_info_json=True, proj_name_pattern=None, proj_regex_pattern=None, unpack_zip=True,
                            logger=None, custom_cfg=None):
@@ -659,13 +737,17 @@ def bulk_download_projects(project_ids=None, exclude_enrichment_files=[], exclud
         cfg = Config.get_config()
     else:
         cfg = custom_cfg
+    if exclude_enrichment_files is None:
+        exclude_enrichment_files = []
+    if exclude_recording_files is None:
+        exclude_recording_files = []
     if output_directory is None:
-        output_directory = cfg_get('download_directory')
+        output_directory = _cfg_get('download_directory', cfg)
     if logger is None:
         logger = get_logger()
-    base_url = cfg_get('base_url')
-    headers = cfg_get('headers')
-    workspace_id = cfg_get('workspace_id')
+    base_url = _cfg_get('base_url', cfg)
+    headers = _cfg_get('headers', cfg)
+    workspace_id = _cfg_get('workspace_id', cfg)
     if project_ids is None:
         project_dicts = get_project_list(name_pattern=proj_name_pattern, regex_pattern=proj_regex_pattern, return_dict=True)
         project_ids = list(project_dicts.keys())
@@ -747,7 +829,7 @@ def bulk_download_projects(project_ids=None, exclude_enrichment_files=[], exclud
                 failed_projects.append(project_id)
         if all_recordings or all_enrichments:
             logger.info(f"Preparing download for project {project_id}...")
-            response = requests.post(project_download_url, json=payload, headers=headers, stream=True)
+            response = _request("POST", project_download_url, json=payload, headers=headers, stream=True, custom_cfg=cfg)
             if response.status_code != 200:
                 logger.error(f"Failed to retrieve data for project {project_id}: {response.text}")
                 logger.error(f"Skipping project {project_id}")
@@ -779,4 +861,3 @@ def bulk_download_projects(project_ids=None, exclude_enrichment_files=[], exclud
     logger.info("Finished bulk_download_projects")
     if failed_projects:
         logger.error(f"Failed to download data for the following projects: {failed_projects}, check the logs for details")
-

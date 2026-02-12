@@ -18,6 +18,7 @@ class Config:
             cls.workspace_id = None
             cls.base_url = None
             cls.download_directory = None
+            cls.timeout = None
             cls.logger_name = None
         return cls._instance
 
@@ -52,6 +53,7 @@ class Config:
             "X-API-Key": cls.api_key,
             "Content-Type": "application/json"
         }
+    @classmethod
     def is_config_loaded(cls):
         if cls.api_key is None or cls.workspace_id is None or cls.base_url is None:
             return False
@@ -238,6 +240,12 @@ def format_project_name(project_id, project_dicts):
     return re.sub('[^0-9a-zA-Z]+', '_', given_proj_name)
 
 
+def _is_within_directory(directory, target):
+    abs_directory = os.path.abspath(directory)
+    abs_target = os.path.abspath(target)
+    return os.path.commonpath([abs_directory]) == os.path.commonpath([abs_directory, abs_target])
+
+
 def unpack_zip_file(zip_filename, output_directory=None, logger=None):
     """
     Utility function to unpack a downloaded ZIP file.
@@ -260,7 +268,13 @@ def unpack_zip_file(zip_filename, output_directory=None, logger=None):
         output_directory = cfg_get('download_directory')
     try:
         with zipfile.ZipFile(zip_filename, 'r') as zip_ref:
-            zip_ref.extractall(output_directory)
+            for member in zip_ref.infolist():
+                member_path = os.path.join(output_directory, member.filename)
+                if not _is_within_directory(output_directory, member_path):
+                    logger.error(f"Unsafe ZIP path detected: {member.filename}")
+                    return False
+            for member in zip_ref.infolist():
+                zip_ref.extract(member, output_directory)
         os.remove(zip_filename)
         logger.info(f"Successfully unpacked and removed ZIP file: {zip_filename}")
         return True
@@ -316,5 +330,3 @@ def pass_filters(item, item_type='file', date_range=None, name_pattern=None,
             return False
 
     return True
-
-
