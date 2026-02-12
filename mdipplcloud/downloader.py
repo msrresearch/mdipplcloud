@@ -512,7 +512,7 @@ def download_project_enrichments(project_id, download_directory=None, name_patte
     success = False
     logger.info(f"Downloading enrichments for project {project_id}...")
     try:
-        response = requests.get(enrichments_url, headers=headers)
+        response = _request("GET", enrichments_url, headers=headers, custom_cfg=cfg)
         response.raise_for_status()
 
         enrichments = response.json()['result']
@@ -563,8 +563,6 @@ def download_enrichment(enrichments_url, enrichment, download_directory=None, lo
         cfg = Config.get_config()
     else:
         cfg = custom_cfg
-    workspace_id = _cfg_get('workspace_id', cfg)
-    base_url = _cfg_get('base_url', cfg)
     headers = _cfg_get('headers', cfg)
     if not download_directory:
         download_directory = _cfg_get('download_directory', cfg)

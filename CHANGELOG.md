@@ -21,10 +21,14 @@ The format is based on Keep a Changelog.
 - Changed plugin provenance/result payloads to include plugin-scoped output paths and config hash.
 - Normalized package versioning to SemVer (`0.2.0`).
 - Updated README installation guidance to reflect standalone/plugin-first usage and removed submodule-oriented wording.
+- Corrected the plugin-run config example to use the `/v2` Pupil Cloud API base URL.
 
 ### Fixed
 - Constrained setuptools package discovery to `mdipplcloud*` so editable installs work in cross-repo smoke tests.
 - Allowed release checks to warn (not fail) when `AGENTS.md` is absent on release branches.
+- Updated `pyproject.toml` license metadata to table form for broader PEP 621/toolchain compatibility.
+- Switched project enrichment listing to shared `_request(...)` path for consistent timeout/retry behavior and removed unused locals in `download_enrichment`.
+- Hardened `scripts/release/tag_release.sh` to require `main` aligned with `origin/main` before tagging.
 
 ## [0.1.0] - 2025-04-10
 

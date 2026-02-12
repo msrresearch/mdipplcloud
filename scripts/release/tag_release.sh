@@ -15,6 +15,20 @@ if [[ -n "$(git status --porcelain)" ]]; then
   exit 1
 fi
 
+if ! git remote get-url origin >/dev/null 2>&1; then
+  echo "Missing origin remote. Configure origin before tagging." >&2
+  exit 1
+fi
+
+git fetch --tags origin
+
+local_head="$(git rev-parse HEAD)"
+remote_head="$(git rev-parse origin/main)"
+if [[ "$local_head" != "$remote_head" ]]; then
+  echo "Local main is not aligned with origin/main. Pull/rebase before tagging." >&2
+  exit 1
+fi
+
 get_version() {
   if [[ -f pyproject.toml ]] && awk '
     /^\[project\]/ {in_project=1; next}

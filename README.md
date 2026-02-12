@@ -130,7 +130,7 @@ mdivicom plugins info mdipplcloud
 mdivicom run mdipplcloud \
   --dataset /path/to/input_dataset \
   --out /path/to/run_output \
-  --config '{"recording_ids":["recording_id_here"],"cloud":{"api_key":"***","workspace_id":"***","base_url":"https://api.cloud.pupil-labs.com"}}'
+  --config '{"recording_ids":["recording_id_here"],"cloud":{"api_key":"***","workspace_id":"***","base_url":"https://api.cloud.pupil-labs.com/v2"}}'
 ```
 
 Contract notes:
