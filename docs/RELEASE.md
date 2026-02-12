@@ -1,13 +1,5 @@
 # Release Workflow (MDI policy)
 
-## Branch flow
-
-- Integration: `local/dev`
-- Release candidate: `local/release-staging`
-- Publish: `main`
-
-Promote by cherry-picking non-`plan:` commits from `local/dev` to `local/release-staging`, validate, then merge to `main`.
-
 ## Version source
 
 - Python packages: `pyproject.toml` (`[project].version`)
