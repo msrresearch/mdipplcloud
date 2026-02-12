@@ -1,7 +1,7 @@
 # mdipplcloud: Pupil Labs Cloud API Wrapper
 
-**A Python wrapper for the Pupil Labs Cloud API** – enabling efficient interaction and data management.  
-This submodule is **standalone** but also integrates seamlessly into the [mdivicomtools](https://github.com/msrresearch/mdivicomtools) umbrella repository.
+**A Python wrapper for the Pupil Labs Cloud API** - enabling efficient interaction and data management.  
+This repository is a **standalone package** and also integrates as an optional plugin for [mdivicomtools](https://github.com/msrresearch/mdivicomtools).
 
 ---
 
@@ -32,22 +32,25 @@ This submodule is **standalone** but also integrates seamlessly into the [mdivic
 
 1. **Clone this repository**:
    ```bash
-   git clone https://github.com/yourname/mdipplcloud.git
+   git clone https://github.com/msrresearch/mdipplcloud.git
    cd mdipplcloud
    ```
 
 2. Install:
     ```bash
-	pip install .
+    pip install .
     ```
 
-	Or for local development:
-	```
-	pip install -e .
-	```
+   Or for local development:
+   ```bash
+   pip install -e .
+   ```
 
-3. (Optional) Integration with mdivicomtools
-- If you use this repository within mdivicomtools, you can simply add this repository as a Git submodule or install it via pip install -e ./mdipplcloud within the umbrella environment.
+3. (Optional) Install into an existing mdivicomtools environment
+- Keep plugin installation package-based (no submodule required):
+  ```bash
+  pip install git+https://github.com/msrresearch/mdipplcloud.git
+  ```
 
 ⸻
 
