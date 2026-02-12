@@ -6,8 +6,7 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
-### Changed
-- Updated README installation guidance to reflect standalone/plugin-first usage and removed submodule-oriented wording.
+- No entries yet.
 
 ## [0.2.0] - 2026-02-11
 
@@ -21,6 +20,7 @@ The format is based on Keep a Changelog.
 - Changed plugin execution entry to `run(dataset_dir, out_dir, config, *, work_dir=None, dry_run=False)` with compatibility fallback for `plugin_out_dir`.
 - Changed plugin provenance/result payloads to include plugin-scoped output paths and config hash.
 - Normalized package versioning to SemVer (`0.2.0`).
+- Updated README installation guidance to reflect standalone/plugin-first usage and removed submodule-oriented wording.
 
 ### Fixed
 - Constrained setuptools package discovery to `mdipplcloud*` so editable installs work in cross-repo smoke tests.
