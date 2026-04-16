@@ -60,6 +60,10 @@ This repository is a **standalone package** and also integrates as an optional p
 	3.	Keep config.ini private (especially your API key). If you keep it in your repo, add config.ini to .gitignore.
 	4.	Load the config in your Python script:
 
+`config_template.ini` now uses unquoted placeholder values. For backward
+compatibility, `load_config()` also strips a single pair of wrapping quotes
+from config values if they are present.
+
 ```python
 import mdipplcloud as pplc
 
@@ -117,6 +121,10 @@ Canonical runnable reference: `mdipplcloud/example_script.py`.
 
 `mdipplcloud` is also registered as an `mdivicomtools` plugin via the `mdivicomtools.plugins` entry-point group.
 
+Public scope note:
+- Public plugin id remains `mdipplcloud` for the v0.1 contract.
+- Private pilot plugin ids are intentionally not documented in this public repository until private naming is finalized.
+
 ### Discover and inspect
 
 ```bash
@@ -135,6 +143,7 @@ mdivicom run mdipplcloud \
 
 Contract notes:
 - Registration uses v0.1 JSON-safe shape: `{"meta": {...}, "entry": {"callable": "mdipplcloud.plugin:run"}}`.
+- Required metadata in `meta` includes `api_version`, `id`, and `publisher` (`msrresearch`).
 - Python execution entrypoint is `run(dataset_dir, out_dir, config, *, work_dir=None, dry_run=False)`.
 - Plugin outputs are plugin-scoped under `out_dir/`:
   - `out_dir/dataset/**`

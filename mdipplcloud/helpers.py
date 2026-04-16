@@ -8,6 +8,15 @@ import fnmatch
 
 # Modifying the Config class to include getter methods for headers, recordings_url, and projects_url
 
+
+def _strip_wrapping_quotes(value):
+    if value is None:
+        return value
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        return value[1:-1]
+    return value
+
 class Config:
     _instance = None
 
@@ -31,10 +40,10 @@ class Config:
         except Exception as e:
             raise RuntimeError(f"Error reading config file: {e}")
 
-        cls.api_key = config['API']['key']
-        cls.workspace_id = config['API']['workspace_id']
-        cls.base_url = config['API']['base_url']
-        cls.download_directory = config['Download']['directory']
+        cls.api_key = _strip_wrapping_quotes(config['API']['key'])
+        cls.workspace_id = _strip_wrapping_quotes(config['API']['workspace_id'])
+        cls.base_url = _strip_wrapping_quotes(config['API']['base_url'])
+        cls.download_directory = _strip_wrapping_quotes(config['Download']['directory'])
         # if download_directory is not set, use current directory
         if cls.download_directory == "":
             cls.download_directory = os.getcwd()

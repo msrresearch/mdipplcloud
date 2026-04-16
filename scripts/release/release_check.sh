@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if ! git rev-parse --show-toplevel >/dev/null 2>&1; then
+  echo "[FAIL] release-check requires a git repository" >&2
+  exit 1
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
 fail() {
@@ -15,6 +20,30 @@ pass() {
 
 warn() {
   echo "[WARN] $1"
+}
+
+get_version() {
+  if [[ -f pyproject.toml ]] && awk '
+    /^\[project\]/ {in_project=1; next}
+    /^\[/ && in_project {in_project=0}
+    in_project && /^version *= *"[^"]+"/ {found=1}
+    END {exit(found ? 0 : 1)}
+  ' pyproject.toml; then
+    awk '
+      /^\[project\]/ {in_project=1; next}
+      /^\[/ && in_project {in_project=0}
+      in_project && /^version *= *"[^"]+"/ {
+        gsub(/^[^\"]*\"/, "", $0)
+        gsub(/\".*$/, "", $0)
+        print $0
+        exit
+      }
+    ' pyproject.toml
+  elif [[ -f VERSION ]]; then
+    tr -d '[:space:]' < VERSION
+  else
+    return 1
+  fi
 }
 
 if [[ ! -f CHANGELOG.md ]]; then
@@ -38,6 +67,40 @@ elif [[ -f VERSION ]]; then
   pass "VERSION file found"
 else
   fail "No version source (pyproject.toml [project].version or VERSION)"
+fi
+
+if ! git remote get-url origin >/dev/null 2>&1; then
+  fail "origin remote missing; cannot verify remote tag state"
+fi
+pass "origin remote configured"
+
+version="$(get_version)"
+tag="v${version}"
+head_commit="$(git rev-parse HEAD)"
+
+if ! remote_tag_lines="$(git ls-remote --tags origin "$tag" "$tag^{}" 2>/dev/null)"; then
+  fail "failed to query tags from origin; cannot verify whether this version is already published"
+fi
+pass "origin tags queried"
+
+remote_tag_commit="$(printf '%s\n' "$remote_tag_lines" | awk -v tag="$tag" '
+  $2 == ("refs/tags/" tag "^{}") {print $1; found=1; exit}
+  $2 == ("refs/tags/" tag) {direct=$1}
+  END {
+    if (!found && direct != "") {
+      print direct
+    }
+  }
+')"
+
+if [[ -n "$remote_tag_commit" ]]; then
+  if [[ "$remote_tag_commit" == "$head_commit" ]]; then
+    pass "Version tag $tag already points at HEAD on origin"
+  else
+    fail "Version tag $tag already exists on a different commit on origin; bump version before preparing a new release"
+  fi
+else
+  pass "Version $version is not already tagged on origin"
 fi
 
 if [[ -f AGENTS.md ]]; then
