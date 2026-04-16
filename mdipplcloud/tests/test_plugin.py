@@ -9,6 +9,7 @@ def test_get_plugin_contract_is_json_serializable():
     contract = plugin.get_plugin()
     assert contract["meta"]["api_version"] == plugin.API_VERSION
     assert contract["meta"]["id"] == plugin.PLUGIN_ID
+    assert contract["meta"]["publisher"] == "msrresearch"
     assert contract["meta"]["kind"] == "python"
     assert contract["entry"]["callable"] == plugin.ENTRY_CALLABLE
     assert contract["meta"]["inputs"][0]["path_globs"] == ["**/*"]
@@ -47,11 +48,19 @@ def test_run_writes_manifest_and_provenance_without_download(tmp_path):
     resultbundle = json.loads(resultbundle_path.read_text(encoding="utf-8"))
     assert resultbundle["resultbundle_type"] == plugin.RESULTBUNDLE_TYPE
     assert resultbundle["schema_version"] == plugin.RESULTBUNDLE_SCHEMA_VERSION
+    assert resultbundle["upstream_tool"] == "pupilcloud"
+    assert resultbundle["producer"]["tool_ref"] == "msrresearch/mdipplcloud"
+    assert resultbundle["producer"]["tool_version"] == result["plugin_version"]
+    assert resultbundle["producer"]["pipeline_run_id"] == result["run_id"]
+    assert resultbundle["time_reference"] == {"kind": "timestamp", "unit": "ns"}
     assert isinstance(resultbundle["files"], list)
 
     provenance_path = out_dir / "provenance.json"
     assert provenance_path.exists()
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    assert provenance["plugin"]["meta"]["api_version"] == plugin.API_VERSION
+    assert provenance["plugin"]["meta"]["id"] == plugin.PLUGIN_ID
+    assert provenance["plugin"]["meta"]["publisher"] == "msrresearch"
     assert provenance["inputs"]["dataset_dir"] == str(dataset_dir)
     assert provenance["inputs"]["out_dir"] == str(out_dir)
     assert provenance["inputs"]["config"]["cloud"]["api_key"] == "***REDACTED***"

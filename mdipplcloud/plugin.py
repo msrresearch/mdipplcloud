@@ -141,11 +141,11 @@ def _write_resultbundle(output_root, output_dataset_dir, run_id):
         "resultbundle_type": RESULTBUNDLE_TYPE,
         "schema_version": RESULTBUNDLE_SCHEMA_VERSION,
         "created_at": _now_utc(),
+        "upstream_tool": "pupilcloud",
         "producer": {
             "tool_ref": "msrresearch/mdipplcloud",
             "tool_version": _get_version(),
             "pipeline_run_id": run_id,
-            "upstream_tool": "pupilcloud",
         },
         "time_reference": {"kind": "timestamp", "unit": "ns"},
         "files": resultbundle_files,
