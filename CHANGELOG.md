@@ -20,7 +20,7 @@ No entries yet.
 - Clarified plugin contract notes in README to explicitly call out required `meta` fields used by `mdivicomtools` integration.
 - Moved `upstream_tool` to top-level in `resultbundle.json` so contract resolvers/validators can read it consistently.
 - Updated `config_template.ini` placeholders to use unquoted values so copied configs work in the standalone public path.
-- Clarified `docs/RELEASE.md` so `release-check` is treated as an authoritative gate that checks tags directly against `origin`, and so the release flow follows `local/dev -> local/release-staging -> main`.
+- Clarified `docs/RELEASE.md` so `release-check` is treated as an authoritative gate that checks tags directly against `origin`, while public docs keep only the release-branch policy instead of local scaffolding details.
 
 ### Fixed
 - Hardened `release-check` so it fails when the current version tag already exists on a different commit and so it no longer trusts only stale local tag refs.

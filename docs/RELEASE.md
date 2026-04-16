@@ -21,18 +21,12 @@ make release-tag
 # git push origin main --tags
 ```
 
-## Branch flow
+## Release branch policy
 
-- `local/dev` is the integration branch.
-- `local/release-staging` is the local publish-candidate branch.
-- Validate release candidates on `local/release-staging`, then open a PR to
-  `main`.
-- Keep `local/release-staging` local-only by default.
-- If a public-facing branch is needed for PR review, create it only at the
-  final step from the reviewed local candidate, for example
+- Keep release preparation local until the candidate is ready for public review.
+- If a public-facing review branch is needed, use a temporary branch named
   `release-vX.Y.Z-review`.
-- Publish from merged `main` only, then create and push tag `vX.Y.Z`
-  explicitly.
+- Merge to `main` before creating and pushing tag `vX.Y.Z`.
 
 ## Changelog policy
 
